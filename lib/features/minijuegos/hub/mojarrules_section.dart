@@ -1,237 +1,369 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
-import '../../../domain/models.dart' show Difficulty;
-import '../../results/results_screen.dart' show formatDate;
+import '../../../domain/models.dart' show Difficulty, GameType;
 import '../common/mini_result.dart';
-import 'mini_progress_store.dart';
 import 'mini_results_screen.dart';
 import 'mini_session_screen.dart';
 
-/// The Mojarrules games live in the main practice list, alongside the other
-/// game cards. This section owns their separate V2 history and sessions.
-class MojarrulesSection extends StatefulWidget {
+/// The two remaining Mojarrules modes share the same card layout as the
+/// primary practice games. V2 Switch and Mixto stay out of the home menu.
+class MojarrulesSection extends StatelessWidget {
   const MojarrulesSection({
     super.key,
     required this.roundDuration,
     required this.difficulty,
-    this.store,
   });
 
   final Duration roundDuration;
   final Difficulty difficulty;
-  final MiniProgressStore? store;
 
-  @override
-  State<MojarrulesSection> createState() => _MojarrulesSectionState();
-}
-
-class _MojarrulesSectionState extends State<MojarrulesSection> {
-  late final MiniProgressStore _store = widget.store ?? MiniProgressStore();
-
-  @override
-  void initState() {
-    super.initState();
-    _store.initialize();
-  }
-
-  @override
-  void dispose() {
-    if (widget.store == null) _store.dispose();
-    super.dispose();
-  }
-
-  Future<void> _start(List<MiniGame> games) async {
+  Future<void> _start(BuildContext context, MiniGame game) async {
     final result = await Navigator.push<MiniSessionResult>(
       context,
       appRoute(
         MiniSessionScreen(
-          games: games,
-          roundDuration: widget.roundDuration,
-          difficulty: widget.difficulty,
+          games: [game],
+          roundDuration: roundDuration,
+          difficulty: difficulty,
         ),
       ),
     );
-    if (result == null || !mounted) return;
-    await _store.add(result);
-    if (mounted) {
-      await Navigator.push(
-        context,
-        appRoute(MiniResultsScreen(session: result)),
-      );
-    }
+    if (result == null || !context.mounted) return;
+    await Navigator.push(context, appRoute(MiniResultsScreen(session: result)));
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text(
-        'LOS MOJARRULES · V2',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.muted,
-          letterSpacing: 1.8,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        'Una mojarra, cuatro retos.',
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      const SizedBox(height: 5),
-      const Text(
-        'Practica cada modo o juega el test completo. Los resultados se guardan en un historial propio.',
-        style: TextStyle(color: AppColors.muted, fontSize: 13),
-      ),
-      const SizedBox(height: 18),
-      SurfacePanel(
-        color: AppColors.mint,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Test completo V2',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Switch V2 → Memoria progresiva → Chimp Test → Mixto V2. Hasta ${widget.roundDuration.inMinutes} minutos por modo; cada uno espera que aceptes sus instrucciones.',
-            ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              key: const ValueKey('v2-full-test'),
-              onPressed: () => _start(MiniGame.values),
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Empezar test V2'),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 18),
-      LayoutBuilder(
-        builder: (context, constraints) {
-          const spacing = 16.0;
-          final columns = constraints.maxWidth >= 620 ? 2 : 1;
-          final cardWidth =
-              (constraints.maxWidth - spacing * (columns - 1)) / columns;
-          return Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: [
-              for (final game in MiniGame.values)
-                SizedBox(
-                  width: cardWidth,
-                  child: _MiniGameCard(game: game, onTap: () => _start([game])),
-                ),
-            ],
-          );
-        },
-      ),
-      const SizedBox(height: 24),
-      Text(
-        'Historial de Los Mojarrules',
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      const SizedBox(height: 14),
-      AnimatedBuilder(
-        animation: _store,
-        builder: (context, _) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (_store.error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  _store.error!,
-                  style: const TextStyle(color: AppColors.coral),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      const spacing = 18.0;
+      final columns = constraints.maxWidth >= 620 ? 2 : 1;
+      final cardWidth =
+          (constraints.maxWidth - spacing * (columns - 1)) / columns;
+      return Wrap(
+        spacing: spacing,
+        runSpacing: spacing,
+        children: [
+          for (final game in MiniGame.practiceModes)
+            SizedBox(
+              width: cardWidth,
+              child: _MiniGameCard(
+                game: game,
+                ordinal:
+                    GameType.practiceModes.length +
+                    MiniGame.practiceModes.indexOf(game) +
+                    1,
+                minutes: roundDuration.inMinutes,
+                onStart: () => _start(context, game),
+                onInfo: () => _showMiniGameInfo(
+                  context,
+                  game,
+                  () => _start(context, game),
                 ),
               ),
-            if (_store.sessions.isEmpty)
-              const SurfacePanel(
-                child: Text(
-                  'Completa tu primera sesión. Aquí quedarán tus resultados acumulados.',
-                ),
-              ),
-            for (final session in _store.sessions)
-              Card(
-                child: ListTile(
-                  title: Text(
-                    '${session.rounds.length} rondas · ${session.attempts.length} respuestas',
-                  ),
-                  subtitle: Text(formatDate(session.date)),
-                  trailing: Text('${(session.accuracy * 100).round()}%'),
-                  onTap: () => Navigator.push(
-                    context,
-                    appRoute(MiniResultsScreen(session: session)),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    ],
+            ),
+        ],
+      );
+    },
   );
 }
 
 class _MiniGameCard extends StatelessWidget {
-  const _MiniGameCard({required this.game, required this.onTap});
+  const _MiniGameCard({
+    required this.game,
+    required this.ordinal,
+    required this.minutes,
+    required this.onStart,
+    required this.onInfo,
+  });
 
   final MiniGame game;
-  final VoidCallback onTap;
+  final int ordinal;
+  final int minutes;
+  final VoidCallback onStart;
+  final VoidCallback onInfo;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.white,
-    shape: RoundedRectangleBorder(
-      side: const BorderSide(color: AppColors.line),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      key: ValueKey('v2-card-${game.name}'),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Icon(
-              switch (game) {
-                MiniGame.switchV2 => Icons.alt_route_rounded,
-                MiniGame.progressive => Icons.trending_up,
-                MiniGame.chimp => Icons.numbers,
-                MiniGame.mixed => Icons.shuffle_rounded,
-              },
-              color: AppColors.green,
-              size: 26,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    game.title,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w500,
+  Widget build(BuildContext context) {
+    final color = _miniGameColor(game);
+    return SurfacePanel(
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(19),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: ValueKey('mini-card-${game.name}'),
+          onTap: onStart,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 117,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    color: _miniGameBackground(game),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(19),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    game.description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.muted,
-                    ),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ordinal.toString().padLeft(2, '0'),
+                              style: TextStyle(
+                                color: color.withValues(alpha: .5),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 11),
+                            Icon(_miniGameIcon(game), color: color, size: 28),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: _MiniGameArt(game: game, color: color),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 20, 22, 17),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _miniGameSkill(game),
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            game.title,
+                            style: const TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: -.5,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: onInfo,
+                          tooltip: 'Cómo jugar ${game.title}',
+                          icon: const Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.muted,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      game.description,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 21),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              const WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Icon(
+                                  Icons.schedule_rounded,
+                                  size: 14,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                              TextSpan(text: '  $minutes min'),
+                            ],
+                          ),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                        const Text.rich(
+                          TextSpan(
+                            children: [
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Icon(
+                                  Icons.bar_chart_rounded,
+                                  size: 15,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                              TextSpan(text: '  Alta exigencia'),
+                            ],
+                          ),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: onStart,
+                          iconAlignment: IconAlignment.end,
+                          icon: const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                          ),
+                          style: TextButton.styleFrom(foregroundColor: color),
+                          label: const Text('Practicar'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniGameArt extends StatelessWidget {
+  const _MiniGameArt({required this.game, required this.color});
+
+  final MiniGame game;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      children: [
+        for (var index = 0; index < 6; index++)
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .72),
+              borderRadius: BorderRadius.circular(9),
             ),
-            const Icon(Icons.chevron_right),
+            alignment: Alignment.center,
+            child: game == MiniGame.chimp
+                ? Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                : Container(
+                    width: (7 + index % 3 * 2).toDouble(),
+                    height: (7 + index % 3 * 2).toDouble(),
+                    decoration: BoxDecoration(
+                      color: color.withValues(
+                        alpha: index == 1 || index == 4 ? .9 : .25,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+          ),
+      ],
+    ),
+  );
+}
+
+Color _miniGameColor(MiniGame game) => switch (game) {
+  MiniGame.progressive => AppColors.green,
+  MiniGame.chimp => AppColors.coral,
+  MiniGame.switchV2 => AppColors.amber,
+  MiniGame.mixed => const Color(0xFF237A9E),
+};
+
+Color _miniGameBackground(MiniGame game) => switch (game) {
+  MiniGame.progressive => const Color(0xFFEAF4EE),
+  MiniGame.chimp => const Color(0xFFFAEDE7),
+  MiniGame.switchV2 => const Color(0xFFFAF1E2),
+  MiniGame.mixed => const Color(0xFFE4F2F7),
+};
+
+IconData _miniGameIcon(MiniGame game) => switch (game) {
+  MiniGame.progressive => Icons.trending_up_rounded,
+  MiniGame.chimp => Icons.numbers,
+  MiniGame.switchV2 => Icons.alt_route_rounded,
+  MiniGame.mixed => Icons.shuffle_rounded,
+};
+
+String _miniGameSkill(MiniGame game) => switch (game) {
+  MiniGame.progressive => 'MEMORIA Y PROGRESIÓN',
+  MiniGame.chimp => 'MEMORIA DE TRABAJO',
+  MiniGame.switchV2 => 'LÓGICA Y SECUENCIAS',
+  MiniGame.mixed => 'MEMORIA Y RAZONAMIENTO',
+};
+
+Future<void> _showMiniGameInfo(
+  BuildContext context,
+  MiniGame game,
+  VoidCallback onStart,
+) => showDialog<void>(
+  context: context,
+  builder: (context) => AlertDialog(
+    title: Text(game.title),
+    content: SizedBox(
+      width: 400,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 140,
+              child: _MiniGameArt(game: game, color: _miniGameColor(game)),
+            ),
+            const SizedBox(height: 16),
+            Text(game.instructions),
           ],
         ),
       ),
     ),
-  );
-}
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cerrar'),
+      ),
+      FilledButton(
+        onPressed: () {
+          Navigator.pop(context);
+          onStart();
+        },
+        child: const Text('Practicar'),
+      ),
+    ],
+  ),
+);

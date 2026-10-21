@@ -250,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         MojarrulesSection(
           roundDuration: Duration(minutes: settings.roundMinutes),
           difficulty: settings.difficulty,

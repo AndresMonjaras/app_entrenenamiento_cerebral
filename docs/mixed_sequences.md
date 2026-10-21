@@ -28,7 +28,7 @@ Punto 1 (3.5s) → Grid o Simetría/identidad (máx 5s) → Punto 2 (3.5s) → F
   - Se rechaza estrictamente cualquier input tardío que alcanzaría o afectaría a la fase siguiente.
 - **Recuperación ordenada:** cada toque marca el punto con un círculo rojo y su número de orden (1..N). Se exige la secuencia exacta de aparición.
 - **Modos principales:** la pantalla muestra **Grid + Memoria** y **Simetría + Memoria** como tarjetas separadas. Cada una intercala sus ejercicios de razonamiento con flashes de puntos y termina con su recuperación ordenada.
-- **Modo Mixto V2:** el controlador conserva la secuencia que alterna Grid y Simetría para el test V2; ya no se ofrece como tarjeta principal.
+- **Mixto V2:** se retiró de las opciones del menú. Grid + Memoria y Simetría + Memoria conservan sus propios flujos intercalados.
 - **Duración de ronda:** Grid + Memoria y Simetría + Memoria duran 3 minutos fijos; los demás juegos principales duran 5 o 6 minutos según ajustes. Durante la partida no hay explicaciones repetidas ni reloj numérico, únicamente la barra de progreso y los controles y datos del estímulo.
 
 ## Verificación

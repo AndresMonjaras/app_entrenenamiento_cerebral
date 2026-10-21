@@ -78,9 +78,9 @@ class _MiniSessionScreenState extends State<MiniSessionScreen>
     final exit = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('¿Salir del test?'),
+        title: const Text('¿Salir de la partida?'),
         content: const Text(
-          'Se descartará la sesión en curso. Para conservar una ronda, usa Terminar ronda y completa el recorrido.',
+          'Se descartará la partida en curso. Para conservar la ronda, usa Terminar ronda y completa el recorrido.',
         ),
         actions: [
           TextButton(
@@ -146,7 +146,7 @@ class _MiniSessionScreenState extends State<MiniSessionScreen>
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            tooltip: 'Salir de Los Mojarrules',
+            tooltip: 'Salir de la partida',
             onPressed: _exit,
             icon: const Icon(Icons.arrow_back),
           ),

@@ -5,28 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pg_prep_mobile/core/app_theme.dart';
 import 'package:pg_prep_mobile/domain/models.dart';
 import 'package:pg_prep_mobile/features/minijuegos/common/mini_result.dart';
-import 'package:pg_prep_mobile/features/minijuegos/hub/mini_progress_store.dart';
 import 'package:pg_prep_mobile/features/minijuegos/hub/mini_results_screen.dart';
 import 'package:pg_prep_mobile/features/minijuegos/hub/mini_session_screen.dart';
 import 'package:pg_prep_mobile/features/minijuegos/hub/mojarrules_section.dart';
 import 'package:pg_prep_mobile/features/minijuegos/memoria_progresiva/chimp_test_screen.dart';
-import 'package:pg_prep_mobile/features/minijuegos/memoria_progresiva/memoria_progresiva_screen.dart';
-import 'package:pg_prep_mobile/features/minijuegos/mixto_v2/mixto_v2_screen.dart';
-import 'package:pg_prep_mobile/features/minijuegos/switch_challenge_v2/switch_challenge_v2_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-class _Preferences implements SharedPreferencesAsync {
-  final values = <String, String>{};
-  @override
-  Future<String?> getString(String key) async => values[key];
-  @override
-  Future<void> setString(String key, String value) async {
-    values[key] = value;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 Widget _app(Widget home, {double scale = 1}) => MaterialApp(
   theme: buildAppTheme(),
@@ -42,14 +24,13 @@ Widget _app(Widget home, {double scale = 1}) => MaterialApp(
   home: home,
 );
 
-Widget _miniGamesPage(MiniProgressStore store) => Scaffold(
+Widget _miniGamesPage() => Scaffold(
   body: SafeArea(
     child: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: MojarrulesSection(
         roundDuration: const Duration(minutes: 5),
         difficulty: Difficulty.advanced,
-        store: store,
       ),
     ),
   ),
@@ -88,66 +69,13 @@ void main() {
     }
     await loader.load();
   });
-  testWidgets(
-    'full V2 test waits for all four explanations and reports only at the end',
-    (tester) async {
-      _phone(tester);
-      final store = MiniProgressStore(preferences: _Preferences());
-      await store.initialize();
-      await tester.pumpWidget(_app(_miniGamesPage(store)));
-      await _tap(tester, find.byKey(const ValueKey('v2-full-test')));
-      expect(find.byType(SwitchChallengeV2Screen), findsNothing);
-      await tester.pump(const Duration(minutes: 1));
-      expect(find.text('Entendido, empezar'), findsOneWidget);
-      await _tap(tester, find.text('Entendido, empezar'));
-      await _tap(tester, find.byKey(const ValueKey('opt_0')));
-      await tester.pump(const Duration(milliseconds: 600));
-      expect(find.text('Correcta'), findsNothing);
-      await _finish(tester);
-      expect(find.byType(MiniResultsScreen), findsNothing);
-      expect(find.text('Memoria progresiva'), findsWidgets);
-      await _tap(tester, find.text('Entendido, empezar'));
-      expect(find.byType(MemoriaProgresivaScreen), findsOneWidget);
-      await _finish(tester);
-      expect(find.text('Chimp Test'), findsWidgets);
-      await _tap(tester, find.text('Entendido, empezar'));
-      expect(find.byType(ChimpTestScreen), findsOneWidget);
-      await _finish(tester);
-      expect(find.text('Mixto V2'), findsWidgets);
-      await _tap(tester, find.text('Entendido, empezar'));
-      expect(find.byType(MixtoV2Screen), findsOneWidget);
-      expect(
-        find.byWidgetPredicate(
-          (w) =>
-              w.key is ValueKey<String> &&
-              (w.key! as ValueKey<String>).value.startsWith('v2-flash-'),
-        ),
-        findsOneWidget,
-      );
-      expect(find.textContaining('Punto 1 de'), findsNothing);
-      await _finish(tester);
-      expect(find.byType(MiniResultsScreen), findsOneWidget);
-      expect(store.sessions, hasLength(1));
-      expect(store.sessions.single.rounds.map((r) => r.game), MiniGame.values);
-      expect(store.sessions.single.attempts, hasLength(1));
-      await _tap(tester, find.text('Volver a los juegos'));
-      expect(find.text('4 rondas · 1 respuestas'), findsOneWidget);
-      await _tap(tester, find.text('4 rondas · 1 respuestas'));
-      expect(find.byType(MiniResultsScreen), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox.shrink());
-      store.dispose();
-    },
-  );
-
-  for (final game in MiniGame.values) {
+  for (final game in MiniGame.practiceModes) {
     testWidgets(
       'the whole ${game.name} card opens practice and supports compact enlarged text',
       (tester) async {
         _phone(tester, size: const Size(320, 640));
-        final store = MiniProgressStore(preferences: _Preferences());
-        await tester.pumpWidget(_app(_miniGamesPage(store), scale: 1.6));
-        await _tap(tester, find.byKey(ValueKey('v2-card-${game.name}')));
+        await tester.pumpWidget(_app(_miniGamesPage(), scale: 1.6));
+        await _tap(tester, find.byKey(ValueKey('mini-card-${game.name}')));
         expect(find.byType(MiniSessionScreen), findsOneWidget);
         await _tap(tester, find.text('Entendido, empezar'));
         expect(tester.takeException(), isNull);
@@ -155,10 +83,8 @@ void main() {
         expect(tester.takeException(), isNull);
         await _finish(tester);
         expect(find.byType(MiniResultsScreen), findsOneWidget);
-        expect(store.sessions.single.rounds.single.game, game);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
-        store.dispose();
       },
     );
   }
@@ -221,26 +147,20 @@ void main() {
     },
   );
 
-  testWidgets(
-    'back asks before discarding progress and does not store an unfinished session',
-    (tester) async {
-      _phone(tester);
-      final store = MiniProgressStore(preferences: _Preferences());
-      await tester.pumpWidget(_app(_miniGamesPage(store)));
-      await _tap(tester, find.byKey(const ValueKey('v2-card-mixed')));
-      await _tap(tester, find.text('Entendido, empezar'));
-      await _tap(tester, find.byTooltip('Salir de Los Mojarrules'));
-      expect(find.text('¿Salir del test?'), findsOneWidget);
-      await _tap(tester, find.text('Salir sin guardar'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 350));
-      expect(find.byType(MiniSessionScreen), findsNothing);
-      expect(store.sessions, isEmpty);
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox.shrink());
-      store.dispose();
-    },
-  );
+  testWidgets('back asks before discarding an unfinished game', (tester) async {
+    _phone(tester);
+    await tester.pumpWidget(_app(_miniGamesPage()));
+    await _tap(tester, find.byKey(const ValueKey('mini-card-progressive')));
+    await _tap(tester, find.text('Entendido, empezar'));
+    await _tap(tester, find.byTooltip('Salir de la partida'));
+    expect(find.text('¿Salir de la partida?'), findsOneWidget);
+    await _tap(tester, find.text('Salir sin guardar'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byType(MiniSessionScreen), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets(
     'a deadline closes a confirmation before returning its typed report',
     (tester) async {

@@ -1,6 +1,6 @@
 # Los Mojarrules · P&G Prep Mobile
 
-App Flutter de práctica cognitiva, en español, con cinco modos principales y cuatro modos de Los Mojarrules. Grid + Memoria y Simetría + Memoria duran 3 minutos; los demás modos principales duran 5 o 6 minutos según los ajustes. Incluye instrucciones visuales animadas y retroalimentación diferida.
+App Flutter de práctica cognitiva, en español, con cinco modos principales y dos retos adicionales: Memoria progresiva y Chimp Test. Grid + Memoria y Simetría + Memoria duran 3 minutos; los demás modos principales duran 5 o 6 minutos según los ajustes. Incluye instrucciones visuales animadas y retroalimentación diferida.
 
 ## Iniciar
 
@@ -19,12 +19,11 @@ flutter run -d chrome
 
 ## Experiencia
 
-- **Menú principal:** tarjetas para Grid + Memoria, Simetría + Memoria, Switch Challenge, Reto numérico y Ecuaciones de trazos. Cada tarjeta, incluida la ilustración, abre Practicar.
+- **Menú principal:** tarjetas para Grid + Memoria, Simetría + Memoria, Switch Challenge, Reto numérico, Ecuaciones de trazos, Memoria progresiva y Chimp Test. Todas comparten el mismo diseño y abren su modo de práctica.
 - **Test completo:** recorre los cinco modos principales. La guía de consulta queda fuera del test.
 - **Antes de cada juego:** una demostración animada explica la dinámica. Hay que pulsar **Entendido, empezar** para iniciar la ronda. El reloj comienza después de aceptar, también en las transiciones entre juegos. Switch incluye un ejemplo animado más lento de 24 segundos donde solo en las instrucciones se ejecutan pruebas automáticas con solver hasta coincidir con el objetivo.
 - **Durante cada ronda:** sin explicaciones repetidas ni reloj numérico; el tiempo se visualiza únicamente como barra superior de progreso, acompañada de los controles táctiles y datos del estímulo. Estímulos ilimitados generados localmente, selección táctil inmediata y avance sin mostrar aciertos/errores en la partida. Fases y rondas avanzan automáticamente al vencer el tiempo asignado y registran omisión; se rechaza cualquier input tardío que alcanzaría la fase siguiente. El tiempo sigue contando si se abandona la app temporalmente.
 - **Al terminar:** reporte con precisión, tiempos, omisiones, desglose por habilidad y revisión de respuestas. Las rondas completadas y los ajustes se guardan en el dispositivo.
-- **Los Mojarrules:** Switch V2, Memoria progresiva, Chimp Test y Mixto V2 aparecen en la pantalla principal junto con las demás tarjetas. Incluye test de los cuatro modos, instrucciones por ronda, reporte acumulado e historial propio. [Detalles y fuentes de la integración](docs/mojarrules_v2.md).
 - **Ajustes:** duración configurable de 5 o 6 minutos para Switch Challenge, Reto numérico y Ecuaciones de trazos. Grid + Memoria y Simetría + Memoria tienen 3 minutos fijos. Selector de dificultad (Avanzado / Experto) y vibración si el dispositivo la admite.
 
 Es posible terminar una ronda anticipadamente desde su botón. La siguiente ronda vuelve a presentar sus instrucciones. Salir de una sesión activa requiere confirmar que se descartará. En el test, el reporte aparece al terminar la última ronda; se preserva la retroalimentación diferida durante toda la sesión.
@@ -71,7 +70,7 @@ La documentación oficial se investigó antes de implementar los componentes. De
 - [Secuencias mixtas y temporizadores](docs/mixed_sequences.md).
 - [Fases temporizadas, plantilla dispersa y recuperación ordenada](docs/timed_sequences.md).
 - [Nuevo Switch y animaciones por fases](docs/switch_motion_sources.md).
-- [Los Mojarrules: integración V2, iconos y temporización](docs/mojarrules_v2.md).
+- [Memoria progresiva y Chimp Test: icono y temporización](docs/mojarrules_v2.md).
 - [Ecuaciones de trazos, barra sin reloj y rondas de 3 minutos](docs/stroke_equations.md).
 
 Dependencias principales verificadas en pub.dev: Provider 6.1.5+1, Shared Preferences 2.5.6 y Cupertino Icons 2.0.0. `pubspec.lock` conserva las versiones resueltas.

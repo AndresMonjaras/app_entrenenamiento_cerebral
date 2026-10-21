@@ -2,7 +2,15 @@ import 'package:flutter/foundation.dart';
 
 import '../../../domain/models.dart';
 
-enum MiniGame { switchV2, progressive, chimp, mixed }
+enum MiniGame {
+  switchV2,
+  progressive,
+  chimp,
+  mixed;
+
+  /// Only these modes are presented as practice cards on the home screen.
+  static const practiceModes = <MiniGame>[progressive, chimp];
+}
 
 extension MiniGameDetails on MiniGame {
   String get title => switch (this) {
