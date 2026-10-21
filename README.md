@@ -1,5 +1,4 @@
-# Los Mojarrules · P&G Prep Mobile
-
+# Los Mojarrules
 App Flutter de práctica cognitiva, en español, con cinco modos principales y dos retos adicionales: Memoria progresiva y Chimp Test. Grid + Memoria y Simetría + Memoria duran 3 minutos; los demás modos principales duran 5 o 6 minutos según los ajustes. Incluye instrucciones visuales animadas y retroalimentación diferida.
 
 ## Iniciar
